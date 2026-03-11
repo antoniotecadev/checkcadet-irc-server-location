@@ -3,10 +3,18 @@
 /*                                                        :::      ::::::::   */
 /*   main.cpp                                           :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ateca <antonioteca@hotmail.com>            +#+  +:+       +#+        */
+/*   By: ateca <ateca@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/11 13:55:17 by ateca             #+#    #+#             */
-/*   Updated: 2026/03/11 13:55:18 by ateca            ###   ########.fr       */
+/*   Updated: 2026/03/11 19:01:00 by ateca            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
+#include "../includes/server/server.hpp"
+
+int main(void)
+{
+    Server server(6667);
+    server.start();
+    return (0);
+}
