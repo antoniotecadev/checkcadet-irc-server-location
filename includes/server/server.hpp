@@ -6,7 +6,7 @@
 /*   By: ateca <ateca@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/11 13:53:18 by ateca             #+#    #+#             */
-/*   Updated: 2026/03/11 19:18:19 by ateca            ###   ########.fr       */
+/*   Updated: 2026/03/11 19:39:55 by ateca            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -19,8 +19,12 @@
 #include <unistd.h>     // for close function
 #include <stdexcept>    // for std::runtime_error
 #include <vector>       // for std::vector
-#include <cstring>       // for std::string
+#include <cstring>      // for std::string
 #include <iostream>
+#include <map>
+#include <cerrno>
+
+#include "../network/ClientConnection.hpp"
 
 class Server
 {
@@ -33,6 +37,9 @@ private:
     struct epoll_event events[MAX_EVENTS];
 
 public:
+    std::map<int, ClientConnection *> clients;
+
+public:
     Server(int port);
     ~Server();
 
@@ -42,6 +49,8 @@ private:
     void setupSocket();
     void setupEpoll();
     void eventLoop();
+    void acceptClient();
+    void handleClient(int fd);
 };
 
 #endif

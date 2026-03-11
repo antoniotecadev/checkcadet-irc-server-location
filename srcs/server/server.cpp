@@ -6,7 +6,7 @@
 /*   By: ateca <ateca@student.42.fr>                +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/11 13:55:21 by ateca             #+#    #+#             */
-/*   Updated: 2026/03/11 19:19:18 by ateca            ###   ########.fr       */
+/*   Updated: 2026/03/11 19:38:46 by ateca            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -70,14 +70,12 @@ void Server::eventLoop()
             if (fd == serverSocket)
             {
                 // novo cliente
-                // acceptClient();
-                std::cout << "New client connected\n";
+                acceptClient();
             }
             else
             {
                 // mensagem de cliente
-                // handleClient(fd);
-                 std::cout << "Message from client\n";
+                handleClient(fd);
             }
         }
     }
@@ -88,4 +86,52 @@ void Server::start()
     setupSocket();
     setupEpoll();
     eventLoop();
+}
+
+void Server::acceptClient()
+{
+    sockaddr_in clientAddr;
+    socklen_t clientLen = sizeof(clientAddr);
+
+    int clientFd = accept(serverSocket, (sockaddr *)&clientAddr, &clientLen);
+
+    if (clientFd < 0)
+    {
+        std::cerr << "accept failed" << std::strerror(errno) << std::endl;
+        return;
+    }
+
+    epoll_event ev;
+    ev.events = EPOLLIN;
+    ev.data.fd = clientFd;
+
+    epoll_ctl(epollFd, EPOLL_CTL_ADD, clientFd, &ev);
+
+    ClientConnection *client = new ClientConnection(clientFd);
+
+    clients[clientFd] = client;
+    std::cout << "New client connected: " << clientFd << std::endl;
+}
+
+void Server::handleClient(int fd)
+{
+    char buffer[512];
+
+    int bytes = recv(fd, buffer, sizeof(buffer), 0);
+
+    if (bytes <= 0)
+    {
+        close(fd);
+
+        delete clients[fd];
+        clients.erase(fd);
+
+        std::cout << "Client disconnected: " << fd << std::endl;
+        return;
+    }
+
+    buffer[bytes] = '\0';
+
+    clients[fd]->appendBuffer(buffer);
+    std::cout << "Message from client " << fd << ": " << buffer << std::endl;
 }
