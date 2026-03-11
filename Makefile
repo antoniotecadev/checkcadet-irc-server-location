@@ -6,14 +6,15 @@
 #    By: ateca <ateca@student.42.fr>                +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2026/03/11 14:09:32 by ateca             #+#    #+#              #
-#    Updated: 2026/03/11 19:05:30 by ateca            ###   ########.fr        #
+#    Updated: 2026/03/11 19:40:32 by ateca            ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
 NAME = ircserv
 
 SRCS = srcs/main.cpp \
-      srcs/server/server.cpp
+    	srcs/server/server.cpp \
+		srcs/network/ClientConnection.cpp
 
 # INCLUDES = includes/server/server.hpp
 
