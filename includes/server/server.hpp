@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   server.hpp                                         :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ateca <ateca@student.42.fr>                +#+  +:+       +#+        */
+/*   By: ateca <marvin@42.fr>                       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/11 13:53:18 by ateca             #+#    #+#             */
-/*   Updated: 2026/03/11 19:39:55 by ateca            ###   ########.fr       */
+/*   Updated: 2026/03/20 19:52:48 by ateca            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,9 +20,13 @@
 #include <stdexcept>    // for std::runtime_error
 #include <vector>       // for std::vector
 #include <cstring>      // for std::string
-#include <iostream>
-#include <map>
-#include <cerrno>
+#include <iostream>     // for std::cout and std::cerr
+#include <cerrno>       // for errno and strerror
+#include <fcntl.h>      // for fcntl function
+#include <string>       // for std::string
+#include <memory>       // for std::unique_ptr
+#include <map>          // for std::map
+
 
 #include "../network/ClientConnection.hpp"
 
@@ -50,7 +54,9 @@ private:
     void setupEpoll();
     void eventLoop();
     void acceptClient();
+    void addClient(int fd);
     void handleClient(int fd);
+
 };
 
 #endif

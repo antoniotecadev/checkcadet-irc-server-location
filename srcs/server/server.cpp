@@ -6,7 +6,7 @@
 /*   By: ateca <marvin@42.fr>                       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/11 13:55:21 by ateca             #+#    #+#             */
-/*   Updated: 2026/03/20 19:32:29 by ateca            ###   ########.fr       */
+/*   Updated: 2026/03/20 19:57:34 by ateca            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,12 +20,28 @@ Server::~Server()
 {
 }
 
+// Função para configurar o socket como não bloqueante
+void setNonBlocking(int fd)
+{
+    // F_GETFL = get file status flags
+    // F_SETFL = set file status flags
+    // 0 = não há flags adicionais
+    int flags = fcntl(fd, F_GETFL, 0);
+    if (flags == -1)
+        throw std::runtime_error("fcntl get failed");
+
+    if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1)
+        throw std::runtime_error("fcntl set failed");
+}
+
 void Server::setupSocket()
 {
     // AF_INET = ipv4
     // SOCK_STREAM = tcp
     // 0 = protocolo automático
     serverSocket = socket(AF_INET, SOCK_STREAM, 0);
+
+    setNonBlocking(serverSocket);
 
     if (serverSocket < 0)
         throw std::runtime_error("socket failed");
@@ -76,10 +92,10 @@ void Server::setupEpoll()
     ev.data.fd = serverSocket;
 
     // Registrar no epoll
-    // Adiciona o socket na lista monitorada.
+    // EPOLL_CTL_ADD = adicionar um novo socket para monitorar
     if (epoll_ctl(epollFd, EPOLL_CTL_ADD, serverSocket, &ev) < 0)
         throw std::runtime_error("epoll_ctl failed");
-    
+
     // Agora epoll está observando: serverSocket
 }
 
@@ -124,34 +140,62 @@ void Server::start()
 
 void Server::acceptClient()
 {
-    // Estrutura do cliente
-    // Vai armazenar: IP do cliente, porta do cliente
-    sockaddr_in clientAddr;
-    socklen_t clientLen = sizeof(clientAddr);
-
-    // Criar evento do cliente
-    int clientFd = accept(serverSocket, (sockaddr *)&clientAddr, &clientLen);
-
-    if (clientFd < 0)
+    while (true)
     {
-        std::cerr << "accept failed" << std::strerror(errno) << std::endl;
+        // Estrutura do cliente
+        // Vai armazenar: IP do cliente, porta do cliente
+        sockaddr_in clientAddr;
+        socklen_t clientLen = sizeof(clientAddr);
+
+        // Criar evento do cliente
+        int clientFd = accept(serverSocket, (sockaddr *)&clientAddr, &clientLen);
+
+        // Se não houver mais clientes para aceitar, sair do loop
+        if (clientFd == -1)
+        {
+            // EAGAIN = não há mais conexões para aceitar
+            // EWOULDBLOCK = operação bloqueante, mas socket é não bloqueante
+            if (errno == EAGAIN || errno == EWOULDBLOCK)
+                break;
+
+            std::cerr << "accept failed" << std::strerror(errno) << std::endl;
+            break;
+        }
+
+        setNonBlocking(clientFd);
+
+        // Adicionar cliente no epoll
+        epoll_event ev;
+        ev.events = EPOLLIN;
+        ev.data.fd = clientFd;
+
+        handleClient(clientFd);
+    }
+}
+
+void Server::addClient(int fd)
+{
+    // Adicionar cliente no epoll
+    // EPOLLIN = avisar quando houver dados para ler
+    // EPOLLRDHUP = avisar quando cliente desconectar
+    // EPOLLERR = avisar quando ocorrer erro no socket
+    epoll_event ev;
+    ev.events = EPOLLIN | EPOLLRDHUP | EPOLLERR;
+    ev.data.fd = fd;
+
+    // Adicionar cliente no epoll
+    // EPOLL_CTL_ADD = adicionar um novo socket para monitorar
+    if (epoll_ctl(epollFd, EPOLL_CTL_ADD, fd, &ev) == -1)
+    {
+        close(fd);
         return;
     }
 
-    // Adicionar cliente no epoll
-    epoll_event ev;
-    ev.events = EPOLLIN;
-    ev.data.fd = clientFd;
-
-    // Adicionar cliente no epoll
-    epoll_ctl(epollFd, EPOLL_CTL_ADD, clientFd, &ev);
-
     // Agora epoll também monitora o cliente.
 
-    ClientConnection *client = new ClientConnection(clientFd);
-
-    clients[clientFd] = client;
-    std::cout << "New client connected: " << clientFd << std::endl;
+    // Criar objeto ClientConnection e armazenar no mapa
+    clients.emplace(fd, std::make_unique<ClientConnection>(fd));
+    std::cout << "New client connected: " << fd << std::endl;
 }
 
 void Server::handleClient(int fd)
