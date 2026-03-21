@@ -6,7 +6,7 @@
 /*   By: ateca <marvin@42.fr>                       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/11 13:55:21 by ateca             #+#    #+#             */
-/*   Updated: 2026/03/21 11:18:34 by ateca            ###   ########.fr       */
+/*   Updated: 2026/03/21 12:55:03 by ateca            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -100,8 +100,12 @@ void Server::setupEpoll()
 
     // Criar evento | qual evento que queremos observar
     // EPOLLLIN = avisar quando houver dados para ler
+    // EPOLLET = modo edge-triggered (avisa apenas quando o estado muda, não repetidamente)
+    // EPOLLHUP = avisar quando cliente desconectar (O fechamento "abrupto" ou total)
+    // EPOLLRDHUP = avisar quando cliente desconectar (O fechamento "educado")
+    // EPOLLERR = avisar quando ocorrer erro no socket
     epoll_event ev;
-    ev.events = EPOLLIN;
+    ev.events = EPOLLIN | EPOLLET | EPOLLHUP | EPOLLRDHUP | EPOLLERR;
     ev.data.fd = serverSocket;
 
     // Registrar no epoll
@@ -139,8 +143,8 @@ void Server::eventLoop()
             {
                 // mensagem de cliente
                 // EPOLLERR = erro no socket
-                // EPOLLHUP = cliente desconectou
-                // EPOLLRDHUP = cliente desconectou (para conexões TCP)
+                // EPOLLHUP = cliente desconectou (O fechamento "abrupto" ou total)
+                // EPOLLRDHUP = cliente desconectou (O fechamento "educado")
                 if (events[i].events & (EPOLLERR | EPOLLHUP | EPOLLRDHUP))
                 {
                     disconnectClient(fd);
@@ -180,12 +184,25 @@ void Server::acceptClient()
             // EAGAIN = não há mais conexões para aceitar
             // EWOULDBLOCK = operação bloqueante, mas socket é não bloqueante
             if (errno == EAGAIN || errno == EWOULDBLOCK)
-                break;
+                break; // Não há mais conexões para aceitar, sair do loop
 
             std::cerr << "accept failed" << std::strerror(errno) << std::endl;
-            break;
+            return; // Em caso de erro, apenas retornar (pode ser um erro temporário)
         }
 
+        char ipBuffer[INET_ADDRSTRLEN]; // Espaço para "XXX.XXX.XXX.XXX"
+
+        // 1. Converte o IP de binário para String
+        inet_ntop(AF_INET, &clientAddr.sin_addr, ipBuffer, INET_ADDRSTRLEN);
+
+        // 2. Converte a Porta de Network Byte Order para Host Byte Order
+        // ntohs (Network To Host Short) = converte a porta de network byte order (big endian) para host byte order (pode ser little endian ou big endian dependendo da arquitetura)
+        // uint16_t = tipo de dado para armazenar a porta (16 bits)
+        uint16_t port = ntohs(clientAddr.sin_port);
+
+        std::cout << "IP: " << ipBuffer << " | Porta: " << port << std::endl;
+
+        // Configurar o socket do cliente como não bloqueante e adicioná-lo ao epoll
         setNonBlocking(clientFd);
         addClient(clientFd);
     }
@@ -195,10 +212,12 @@ void Server::addClient(int fd)
 {
     // Adicionar cliente no epoll
     // EPOLLIN = avisar quando houver dados para ler
-    // EPOLLRDHUP = avisar quando cliente desconectar
+    // EPOLLET = modo edge-triggered (avisa apenas quando o estado muda, não repetidamente)
+    // EPOLLHUP = avisar quando cliente desconectar (O fechamento "abrupto" ou total)
+    // EPOLLRDHUP = avisar quando cliente desconectar (O fechamento "educado")
     // EPOLLERR = avisar quando ocorrer erro no socket
     epoll_event ev;
-    ev.events = EPOLLIN | EPOLLRDHUP | EPOLLERR;
+    ev.events = EPOLLIN | EPOLLET | EPOLLHUP | EPOLLRDHUP | EPOLLERR;
     ev.data.fd = fd;
 
     // Adicionar cliente no epoll
@@ -237,10 +256,10 @@ void Server::handleClient(int fd)
             // EAGAIN = não há mais dados para ler
             // EWOULDBLOCK = operação bloqueante, mas socket é não bloqueante
             if (errno == EAGAIN || errno == EWOULDBLOCK)
-                break;
+                break; // Não há mais dados para ler, sair do loop
 
             disconnectClient(fd);
-            return;
+            return; // Em caso de erro, desconectar cliente e retornar
         }
 
         // bytes == 0 significa que o cliente desconectou
@@ -256,7 +275,7 @@ void Server::handleClient(int fd)
         if (it != clients.end())
         {
             // it->second é o seu std::unique_ptr<ClientConnection>
-            it->second->appendBuffer(buffer);
+            it->second->appendBuffer(buffer, bytes);
         }
         else
         {

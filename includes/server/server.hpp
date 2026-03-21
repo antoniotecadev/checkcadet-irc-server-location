@@ -6,7 +6,7 @@
 /*   By: ateca <marvin@42.fr>                       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/11 13:53:18 by ateca             #+#    #+#             */
-/*   Updated: 2026/03/21 11:15:29 by ateca            ###   ########.fr       */
+/*   Updated: 2026/03/21 12:53:02 by ateca            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -17,6 +17,7 @@
 #include <sys/epoll.h>   // for epoll functions and structures
 #include <sys/socket.h>  // for socket functions and structures
 #include <netinet/in.h>  // for sockaddr_in structure
+#include <arpa/inet.h>   // for inet_ntop function
 #include <stdexcept>     // for std::runtime_error
 #include <unistd.h>      // for close function
 #include <iostream>      // for std::cout and std::cerr

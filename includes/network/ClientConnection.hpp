@@ -3,10 +3,10 @@
 /*                                                        :::      ::::::::   */
 /*   ClientConnection.hpp                               :+:      :+:    :+:   */
 /*                                                    +:+ +:+         +:+     */
-/*   By: ateca <ateca@student.42.fr>                +#+  +:+       +#+        */
+/*   By: ateca <marvin@42.fr>                       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/11 19:24:57 by ateca             #+#    #+#             */
-/*   Updated: 2026/03/11 19:35:07 by ateca            ###   ########.fr       */
+/*   Updated: 2026/03/21 11:31:54 by ateca            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -29,7 +29,7 @@ public:
 
     int getFd() const;
 
-    void appendBuffer(const std::string &data);
+    void appendBuffer(const std::string &data, ssize_t length);
     std::string &getBuffer();
 
 };
