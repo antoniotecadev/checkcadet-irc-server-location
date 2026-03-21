@@ -6,7 +6,7 @@
 /*   By: ateca <marvin@42.fr>                       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/11 13:53:18 by ateca             #+#    #+#             */
-/*   Updated: 2026/03/21 13:24:01 by ateca            ###   ########.fr       */
+/*   Updated: 2026/03/21 14:53:54 by ateca            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -27,8 +27,19 @@
 #include <cerrno>        // for errno and strerror
 #include <string>        // for std::string
 #include <memory>        // for std::unique_ptr
+#include <atomic>        // for std::atomic
+#include <csignal>
+#include <cstdlib>
 
 #include "../network/ClientConnection.hpp"
+
+// Variável global atômica para controle de parada segura
+// A variável global que o signalHandler vai alterar
+// atomic<bool> é uma classe template que fornece operações atômicas para tipos de dados.
+// Ela é usada para garantir que as operações de leitura e escrita em uma variável sejam indivisíveis, ou seja, não podem ser interrompidas por outros threads.
+// Isso é especialmente importante em situações de concorrência, como no caso de um servidor que pode receber sinais de interrupção (como SIGINT) enquanto está em execução.
+// Ao usar std::atomic<bool>, garantimos que a variável g_running seja acessada e modificada de forma segura entre o signalHandler e o loop principal do servidor, evitando condições de corrida e garantindo uma parada ordenada do servidor quando um sinal for recebido.
+std::atomic<bool> g_running(true);
 
 class Server
 {

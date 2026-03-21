@@ -6,7 +6,7 @@
 /*   By: ateca <marvin@42.fr>                       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/11 13:55:21 by ateca             #+#    #+#             */
-/*   Updated: 2026/03/21 14:06:09 by ateca            ###   ########.fr       */
+/*   Updated: 2026/03/21 14:23:44 by ateca            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -117,7 +117,7 @@ void Server::setupEpoll()
 void Server::eventLoop()
 {
     // coração do servidor.
-    while (true)
+    while (g_running)
     {
         // Esperar eventos
         // epoll_wait: bloqueia, espera eventos, retorna quando algo acontece
@@ -127,6 +127,14 @@ void Server::eventLoop()
         // -1 = esperar infinito
         // nfds = número de sockets que tiveram eventos
         int nfds = epoll_wait(epollFd, events, MAX_EVENTS, -1);
+
+        if (nfds == -1)
+        {
+            // errno == EINTR significa que o epoll_wait foi interrompido por um sinal (como SIGINT)
+            if (errno == EINTR)
+                continue;
+            break;        // Erro real
+        }
 
         for (int i = 0; i < nfds; i++)
         {
