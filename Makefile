@@ -3,10 +3,10 @@
 #                                                         :::      ::::::::    #
 #    Makefile                                           :+:      :+:    :+:    #
 #                                                     +:+ +:+         +:+      #
-#    By: ateca <ateca@student.42.fr>                +#+  +:+       +#+         #
+#    By: ateca <marvin@42.fr>                       +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2026/03/11 14:09:32 by ateca             #+#    #+#              #
-#    Updated: 2026/03/11 19:40:32 by ateca            ###   ########.fr        #
+#    Updated: 2026/03/21 11:16:21 by ateca            ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -16,19 +16,20 @@ SRCS = srcs/main.cpp \
     	srcs/server/server.cpp \
 		srcs/network/ClientConnection.cpp
 
-# INCLUDES = includes/server/server.hpp
+INCLUDES = includes/server/server.hpp \
+		   includes/network/ClientConnection.hpp
 
 OBJS = $(SRCS:.cpp=.o)
 
 CXX = c++
-CXXFLAGS = -Wall -Wextra -Werror -std=c++98
+CXXFLAGS = -Wall -Wextra -Werror -std=c++17
 
 all: $(NAME)
 
 $(NAME): $(OBJS)
 	$(CXX) $(CXXFLAGS) $(OBJS) -o $(NAME)
 
-# $(OBJS): $(INCLUDES)
+$(OBJS): $(INCLUDES)
 
 clean:
 	rm -f $(OBJS)

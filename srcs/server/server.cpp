@@ -6,7 +6,7 @@
 /*   By: ateca <marvin@42.fr>                       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/11 13:55:21 by ateca             #+#    #+#             */
-/*   Updated: 2026/03/20 19:57:34 by ateca            ###   ########.fr       */
+/*   Updated: 2026/03/21 11:18:34 by ateca            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,24 +14,23 @@
 
 Server::Server(int port) : port(port), serverSocket(-1), epollFd(-1)
 {
+    // Reservar espaço para 1024 clientes no mapa para evitar realocações frequentes.
+    clients.reserve(1024);
 }
 
 Server::~Server()
 {
-}
-
-// Função para configurar o socket como não bloqueante
-void setNonBlocking(int fd)
-{
-    // F_GETFL = get file status flags
-    // F_SETFL = set file status flags
-    // 0 = não há flags adicionais
-    int flags = fcntl(fd, F_GETFL, 0);
-    if (flags == -1)
-        throw std::runtime_error("fcntl get failed");
-
-    if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1)
-        throw std::runtime_error("fcntl set failed");
+    // Fechar todos os sockets dos clientes
+    // auto = deduz o tipo da variável automaticamente
+    for (auto &pair : clients)
+    {
+        close(pair.first);
+    }
+    // Fechar socket do servidor e epoll
+    if (serverSocket != -1)
+        close(serverSocket);
+    if (epollFd != -1)
+        close(epollFd);
 }
 
 void Server::setupSocket()
@@ -71,6 +70,20 @@ void Server::setupSocket()
     // SOMAXCONN = máximo de conexões pendentes.
     if (listen(serverSocket, SOMAXCONN) < 0)
         throw std::runtime_error("listen failed");
+}
+
+// Função para configurar o socket como não bloqueante
+void Server::setNonBlocking(int fd)
+{
+    // F_GETFL = get file status flags
+    // F_SETFL = set file status flags
+    // 0 = não há flags adicionais
+    int flags = fcntl(fd, F_GETFL, 0);
+    if (flags == -1)
+        throw std::runtime_error("fcntl get failed");
+
+    if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) == -1)
+        throw std::runtime_error("fcntl set failed");
 }
 
 void Server::setupEpoll()
@@ -125,7 +138,18 @@ void Server::eventLoop()
             else
             {
                 // mensagem de cliente
-                handleClient(fd);
+                // EPOLLERR = erro no socket
+                // EPOLLHUP = cliente desconectou
+                // EPOLLRDHUP = cliente desconectou (para conexões TCP)
+                if (events[i].events & (EPOLLERR | EPOLLHUP | EPOLLRDHUP))
+                {
+                    disconnectClient(fd);
+                }
+                else if (events[i].events & EPOLLIN)
+                {
+                    // EPOLLIN = há dados para ler
+                    handleClient(fd);
+                }
             }
         }
     }
@@ -163,13 +187,7 @@ void Server::acceptClient()
         }
 
         setNonBlocking(clientFd);
-
-        // Adicionar cliente no epoll
-        epoll_event ev;
-        ev.events = EPOLLIN;
-        ev.data.fd = clientFd;
-
-        handleClient(clientFd);
+        addClient(clientFd);
     }
 }
 
@@ -194,6 +212,11 @@ void Server::addClient(int fd)
     // Agora epoll também monitora o cliente.
 
     // Criar objeto ClientConnection e armazenar no mapa
+    // std::make_unique<ClientConnection>(fd) = cria um novo ClientConnection e retorna um ponteiro único
+    // clients.emplace(fd, std::make_unique<ClientConnection>(fd)) = adiciona o cliente no mapa com a chave fd
+    // O mapa clients é do tipo std::map<int, ClientConnection*>, então precisamos criar um ponteiro para ClientConnection
+    // emplace é mais eficiente que insert porque evita cópias desnecessárias
+    // std::make_unique é uma função que cria um objeto e retorna um std::unique_ptr para ele, garantindo que a memória seja liberada automaticamente quando o ponteiro sair de escopo
     clients.emplace(fd, std::make_unique<ClientConnection>(fd));
     std::cout << "New client connected: " << fd << std::endl;
 }
@@ -201,28 +224,63 @@ void Server::addClient(int fd)
 void Server::handleClient(int fd)
 {
     // Armazena dados recebidos.
-    char buffer[512];
+    char buffer[4096];
 
-    // Lê dados do socket.
-    int bytes = recv(fd, buffer, sizeof(buffer), 0);
-
-    if (bytes <= 0)
+    while (true)
     {
-        // Fechar socket
-        close(fd);
+        // Lê dados do socket.
+        ssize_t bytes = recv(fd, buffer, sizeof(buffer), 0);
 
-        // Deletar objecto
-        delete clients[fd];
-        clients.erase(fd);
+        // bytes == -1 significa que ocorreu um erro ou não há mais dados para ler.
+        if (bytes == -1)
+        {
+            // EAGAIN = não há mais dados para ler
+            // EWOULDBLOCK = operação bloqueante, mas socket é não bloqueante
+            if (errno == EAGAIN || errno == EWOULDBLOCK)
+                break;
 
-        std::cout << "Client disconnected: " << fd << std::endl;
-        return;
+            disconnectClient(fd);
+            return;
+        }
+
+        // bytes == 0 significa que o cliente desconectou
+        if (bytes == 0)
+        {
+            disconnectClient(fd);
+            return;
+        }
+
+        // bytes > 0 significa que recebemos dados do cliente
+        // auto = deduz o tipo da variável automaticamente
+        auto it = clients.find(fd);
+        if (it != clients.end())
+        {
+            // it->second é o seu std::unique_ptr<ClientConnection>
+            it->second->appendBuffer(buffer);
+        }
+        else
+        {
+            // Caso o cliente não exista no mapa (erro de lógica ou desconexão)
+            std::cerr << "Erro: Cliente " << fd << " não encontrado!" << std::endl;
+            return;
+        }
+
+        std::cout << "Message from client " << fd << ": " << buffer << std::endl;
     }
+}
 
-    // Transforma em string.
-    buffer[bytes] = '\0';
+void Server::disconnectClient(int fd)
+{
+    // Remover cliente do epoll
+    // EPOLL_CTL_DEL = remover um socket do monitoramento
+    // nullptr = não precisamos de um evento para remover
+    epoll_ctl(epollFd, EPOLL_CTL_DEL, fd, nullptr);
 
-    // Guarda dados incompletos.
-    clients[fd]->appendBuffer(buffer);
-    std::cout << "Message from client " << fd << ": " << buffer << std::endl;
+    // Fechar socket do cliente
+    close(fd);
+
+    // Remover cliente do mapa
+    clients.erase(fd);
+
+    std::cout << "Client disconnected: " << fd << std::endl;
 }
