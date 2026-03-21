@@ -6,7 +6,7 @@
 /*   By: ateca <marvin@42.fr>                       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/11 13:55:21 by ateca             #+#    #+#             */
-/*   Updated: 2026/03/21 14:23:44 by ateca            ###   ########.fr       */
+/*   Updated: 2026/03/21 15:11:35 by ateca            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -212,7 +212,7 @@ void Server::acceptClient()
         // uint16_t = tipo de dado para armazenar a porta (16 bits)
         uint16_t port = ntohs(clientAddr.sin_port);
 
-        std::cout << "IP: " << ipBuffer << " | Porta: " << port << std::endl;
+        std::cout << "IP: " << ipBuffer << " | Port: " << port << std::endl;
 
         // Configurar o socket do cliente como não bloqueante e adicioná-lo ao epoll
         setNonBlocking(clientFd);

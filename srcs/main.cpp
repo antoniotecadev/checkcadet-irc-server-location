@@ -6,11 +6,13 @@
 /*   By: ateca <marvin@42.fr>                       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/11 13:55:17 by ateca             #+#    #+#             */
-/*   Updated: 2026/03/21 14:53:48 by ateca            ###   ########.fr       */
+/*   Updated: 2026/03/21 15:09:03 by ateca            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
 #include "../includes/server/server.hpp"
+
+std::atomic<bool> g_running(true);
 
 void signalHandler(int signum)
 {
