@@ -6,7 +6,7 @@
 /*   By: ateca <marvin@42.fr>                       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/11 13:55:21 by ateca             #+#    #+#             */
-/*   Updated: 2026/03/21 13:59:11 by ateca            ###   ########.fr       */
+/*   Updated: 2026/03/21 14:06:09 by ateca            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -20,13 +20,11 @@ Server::Server(int port) : port(port), serverSocket(-1), epollFd(-1)
 
 Server::~Server()
 {
-    // Fechar todos os sockets dos clientes
-    // auto = deduz o tipo da variável automaticamente
-    for (auto &pair : clients)
-    {
-        close(pair.first);
-    }
+    // O mapa 'clients' será limpo automaticamente ao sair daqui.
+    // Como ele usa unique_ptr, os destrutores de ClientConnection
+    // serão chamados e eles mesmos fecharão seus respectivos sockets.
     // Fechar socket do servidor e epoll
+
     if (serverSocket != -1)
         close(serverSocket);
     if (epollFd != -1)

@@ -6,7 +6,7 @@
 /*   By: ateca <marvin@42.fr>                       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/11 19:26:02 by ateca             #+#    #+#             */
-/*   Updated: 2026/03/21 13:25:46 by ateca            ###   ########.fr       */
+/*   Updated: 2026/03/21 14:07:53 by ateca            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,6 +18,11 @@ ClientConnection::ClientConnection(int fd) : socketFd(fd)
 
 ClientConnection::~ClientConnection()
 {
+    if (socketFd != -1)
+    {
+        close(socketFd);
+        std::cout << "Socket " << socketFd << " closed by the object's destructor." << std::endl;
+    }
 }
 
 int ClientConnection::getFd() const

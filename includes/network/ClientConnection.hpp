@@ -6,7 +6,7 @@
 /*   By: ateca <marvin@42.fr>                       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/11 19:24:57 by ateca             #+#    #+#             */
-/*   Updated: 2026/03/21 14:00:19 by ateca            ###   ########.fr       */
+/*   Updated: 2026/03/21 14:06:50 by ateca            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -14,6 +14,8 @@
 #define CLIENT_CONNECTION_HPP
 
 #include <string>
+#include <unistd.h>      // for close function
+#include <iostream>      // for std::cout
 
 class ClientConnection
 {
