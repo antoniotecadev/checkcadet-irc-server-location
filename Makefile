@@ -6,7 +6,7 @@
 #    By: ateca <marvin@42.fr>                       +#+  +:+       +#+         #
 #                                                 +#+#+#+#+#+   +#+            #
 #    Created: 2026/03/11 14:09:32 by ateca             #+#    #+#              #
-#    Updated: 2026/03/21 15:32:21 by ateca            ###   ########.fr        #
+#    Updated: 2026/03/21 16:04:33 by ateca            ###   ########.fr        #
 #                                                                              #
 # **************************************************************************** #
 
@@ -24,7 +24,7 @@ OBJS = $(SRCS:.cpp=.o)
 CXX = c++
 CXXFLAGS = -Wall -Wextra -Werror -std=c++17
 
-DOCKER_COMPOSE = docker-compose
+DOCKER_COMPOSE = docker-compose -f ./docker-compose.yml -p checkcadet-irc-server-location
 
 # =========================
 # BUILD C++
