@@ -6,7 +6,7 @@
 /*   By: ateca <marvin@42.fr>                       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/11 13:53:18 by ateca             #+#    #+#             */
-/*   Updated: 2026/03/21 12:53:02 by ateca            ###   ########.fr       */
+/*   Updated: 2026/03/21 13:24:01 by ateca            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -56,9 +56,12 @@ private:
     void eventLoop();
     void acceptClient();
     void addClient(int fd);
-    void handleClient(int fd);
+    void handleRead(int fd);
+    void handleWrite(int fd);
     void setNonBlocking(int fd);
     void disconnectClient(int fd);
+    void modifyEpoll(int fd, uint32_t events);
+    void sendMessage(int fd, const std::string &msg);
 };
 
 #endif

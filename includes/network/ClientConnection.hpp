@@ -6,7 +6,7 @@
 /*   By: ateca <marvin@42.fr>                       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/03/11 19:24:57 by ateca             #+#    #+#             */
-/*   Updated: 2026/03/21 11:31:54 by ateca            ###   ########.fr       */
+/*   Updated: 2026/03/21 14:00:19 by ateca            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -18,12 +18,11 @@
 class ClientConnection
 {
 private:
-
     int socketFd;
+    std::string outBuffer;
     std::string inputBuffer;
 
 public:
-
     ClientConnection(int fd);
     ~ClientConnection();
 
@@ -32,6 +31,8 @@ public:
     void appendBuffer(const std::string &data, ssize_t length);
     std::string &getBuffer();
 
+    void sendMessage(const std::string &msg);
+    std::string &getOutBuffer();
 };
 
 #endif
