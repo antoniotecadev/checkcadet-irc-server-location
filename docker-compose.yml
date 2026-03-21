@@ -1,0 +1,33 @@
+services:
+  irc-server:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile
+    image: checkcadet-irc:latest
+    container_name: irc_core
+    ports:
+      - "6667:6667"
+    # Aumentar os limites de conexões simultâneas (C10K ready)
+    ulimits:
+      nofile:
+        soft: 65535 # O limite recomendado para servidores de IRC é 65535 conexões simultâneas
+        hard: 65535 # O limite máximo permitido pelo sistema
+    restart: unless-stopped # Reinicia o container automaticamente em caso de falha, mas não reinicia se for parado manualmente
+    networks:
+      - irc-network
+
+  # Dashboard de Logs (Acesse em http://localhost:8080)
+  log-viewer:
+    image: amir20/dozzle:latest
+    container_name: irc_logs
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    ports:
+      - "8080:8080"
+    networks:
+      - irc-network
+
+networks: # Definindo a rede personalizada para isolar os containers
+  irc-network:
+    name: irc_network
+    driver: bridge
