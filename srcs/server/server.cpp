@@ -12,8 +12,10 @@
 
 #include "../../includes/server/server.hpp"
 
-Server::Server(int port) : port(port), serverSocket(-1), epollFd(-1)
+Server::Server(int port) : port(port), serverSocket(-1), epollFd(-1), 
+    messageRouter(this), commandDispatcher(userRegistry, channelManager, messageRouter)
 {
+    messageRouter.setUserRegistry(&userRegistry);
     // Reservar espaço para 1024 clientes no mapa para evitar realocações frequentes.
     clients.reserve(1024);
 }
@@ -249,8 +251,8 @@ void Server::addClient(int fd)
     // emplace é mais eficiente que insert porque evita cópias desnecessárias
     // std::make_unique é uma função que cria um objeto e retorna um std::unique_ptr para ele, garantindo que a memória seja liberada automaticamente quando o ponteiro sair de escopo
     clients.emplace(fd, std::make_unique<ClientConnection>(fd));
+    userRegistry.addUser(fd);
     std::cout << "New client connected: " << fd << std::endl;
-    sendMessage(fd, ":server 001 Welcome\r\n");
 }
 
 void Server::handleRead(int fd)
@@ -287,8 +289,23 @@ void Server::handleRead(int fd)
         auto it = clients.find(fd);
         if (it != clients.end())
         {
-            // it->second é o seu std::unique_ptr<ClientConnection>
             it->second->appendBuffer(buffer, bytes);
+
+            std::string &inputBuf = it->second->getBuffer();
+            size_t pos;
+            while ((pos = inputBuf.find("\n")) != std::string::npos)
+            {
+                std::string line = inputBuf.substr(0, pos + 1);
+                inputBuf.erase(0, pos + 1);
+
+                std::cout << "[Server] RECEIVED: " << line;
+                IRCMessage msg = Parser::parse(line);
+                if (msg.isValid())
+                {
+                    std::cout << "[Server] EXEC: " << msg.command << std::endl;
+                    commandDispatcher.dispatch(fd, msg);
+                }
+            }
         }
         else
         {
@@ -297,7 +314,7 @@ void Server::handleRead(int fd)
             return;
         }
 
-        std::cout << "Message from client " << fd << ": " << buffer << std::endl;
+        // std::cout << "Message from client " << fd << ": " << buffer << std::endl;
     }
 }
 
@@ -312,6 +329,12 @@ void Server::disconnectClient(int fd)
     close(fd);
 
     // Remover cliente do mapa
+    User* user = userRegistry.getUserByFd(fd);
+    if (user)
+    {
+        channelManager.removeUserFromAllChannels(user);
+        userRegistry.removeUser(fd);
+    }
     clients.erase(fd);
 
     std::cout << "Client disconnected: " << fd << std::endl;
@@ -323,7 +346,7 @@ void Server::handleWrite(int fd)
     if (it == clients.end())
         return;
 
-    std::string &out = it->second->getBuffer();
+    std::string &out = it->second->getOutBuffer();
 
     while (!out.empty())
     {
@@ -358,7 +381,7 @@ void Server::sendMessage(int fd, const std::string &msg)
     if (it == clients.end())
         return;
 
-    std::string &out = it->second->getBuffer();
+    std::string &out = it->second->getOutBuffer();
 
     // Se o buffer já estava vazio, tentamos enviar directo para ganhar velocidade
     if (out.empty())

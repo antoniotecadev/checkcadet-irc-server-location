@@ -32,6 +32,11 @@
 #include <cstdlib>
 
 #include "../network/ClientConnection.hpp"
+#include "../irc/UserRegistry.hpp"
+#include "../irc/ChannelManager.hpp"
+#include "../irc/MessageRouter.hpp"
+#include "../irc/CommandDispatcher.hpp"
+#include "../irc/Parser.hpp"
 
 // Variável global atômica para controle de parada segura
 // A variável global que o signalHandler vai alterar
@@ -56,11 +61,18 @@ private:
 public:
     std::unordered_map<int, std::unique_ptr<ClientConnection>> clients;
 
+private:
+    UserRegistry userRegistry;
+    ChannelManager channelManager;
+    MessageRouter messageRouter;
+    CommandDispatcher commandDispatcher;
+
 public:
     Server(int port);
     ~Server();
 
     void start();
+    void sendMessage(int fd, const std::string &msg);
 
 private:
     void setupSocket();
@@ -73,7 +85,6 @@ private:
     void setNonBlocking(int fd);
     void disconnectClient(int fd);
     void modifyEpoll(int fd, uint32_t events);
-    void sendMessage(int fd, const std::string &msg);
 };
 
 #endif

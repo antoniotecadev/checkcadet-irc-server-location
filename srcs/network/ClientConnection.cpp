@@ -30,13 +30,9 @@ int ClientConnection::getFd() const
     return socketFd;
 }
 
-void ClientConnection::appendBuffer(const std::string &data, ssize_t length)
+void ClientConnection::appendBuffer(const char *data, size_t length)
 {
-    // Adiciona os dados recebidos ao buffer de entrada do cliente.
-    // O buffer é uma string que armazena os dados recebidos do cliente.
-    // append = adiciona os dados ao final da string
-    // data = ponteiro para os dados recebidos
-    // length = número de bytes recebidos
+    // Adiciona exatamente 'length' bytes ao final da string.
     inputBuffer.append(data, length);
 }
 

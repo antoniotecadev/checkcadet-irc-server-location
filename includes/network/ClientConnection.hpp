@@ -30,7 +30,7 @@ public:
 
     int getFd() const;
 
-    void appendBuffer(const std::string &data, ssize_t length);
+    void appendBuffer(const char *data, size_t length);
     std::string &getBuffer();
 
     void sendMessage(const std::string &msg);

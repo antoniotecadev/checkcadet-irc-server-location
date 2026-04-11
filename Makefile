@@ -14,10 +14,23 @@ NAME = ircserv
 
 SRCS = srcs/main.cpp \
     	srcs/server/server.cpp \
-		srcs/network/ClientConnection.cpp
+		srcs/network/ClientConnection.cpp \
+		srcs/irc/Parser.cpp \
+		srcs/irc/UserRegistry.cpp \
+		srcs/irc/ChannelManager.cpp \
+		srcs/irc/MessageRouter.cpp \
+		srcs/irc/CommandDispatcher.cpp
 
 INCLUDES = includes/server/server.hpp \
-		   includes/network/ClientConnection.hpp
+		   includes/network/ClientConnection.hpp \
+		   includes/irc/IRCMessage.hpp \
+		   includes/irc/Parser.hpp \
+		   includes/irc/User.hpp \
+		   includes/irc/UserRegistry.hpp \
+		   includes/irc/Channel.hpp \
+		   includes/irc/ChannelManager.hpp \
+		   includes/irc/MessageRouter.hpp \
+		   includes/irc/CommandDispatcher.hpp
 
 OBJS = $(SRCS:.cpp=.o)
 
