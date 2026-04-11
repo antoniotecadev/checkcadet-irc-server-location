@@ -128,4 +128,4 @@ make build
 
 ## Contato / Autores
 
-- ateca (marvin@42.fr)
+- ateca (ateca@student.42luanda.com)
