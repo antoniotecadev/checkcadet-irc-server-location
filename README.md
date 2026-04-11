@@ -128,4 +128,5 @@ make build
 
 ## Contato / Autores
 
-- ateca (ateca@student.42luanda.com)
+- António Teca aka ateca (ateca@student.42luanda.com)
+- António Sebastião Pedro aka ansebast (ansebast@student.42luanda.com)
