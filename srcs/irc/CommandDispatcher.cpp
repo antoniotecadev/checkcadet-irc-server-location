@@ -6,7 +6,7 @@
 /*   By: ateca <marvin@42.fr>                       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/11 17:30:00 by ateca             #+#    #+#             */
-/*   Updated: 2026/04/14 19:34:30 by ateca            ###   ########.fr       */
+/*   Updated: 2026/04/14 23:43:24 by ateca            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -109,6 +109,14 @@ void CommandDispatcher::handlePrivmsg(User* user, const IRCMessage &msg)
     
     std::string target = msg.params[0];
     std::string text = msg.params[1];
+
+     // detectar JSON
+    if (!text.empty() && text[0] == '{')
+    {
+        handleStructuredMessage(user, target, text);
+        return;
+    }
+
     std::string fullMsg = ":" + user->getNickname() + " PRIVMSG " + target + " :" + text;
 
     if (target[0] == '#')
@@ -136,4 +144,26 @@ void CommandDispatcher::sendWelcome(User* user)
     user->setRegistered(true);
     messageRouter.sendToUser(user, ":server 001 " + user->getNickname() + " :Welcome to the IRC server");
     messageRouter.sendToUser(user, ":server 002 " + user->getNickname() + " :Your host is server, running version 1.0");
+}
+
+void CommandDispatcher::handleStructuredMessage(User* user, const std::string &target, const std::string &json)
+{
+    // Aqui podes usar uma lib JSON depois (nlohmann/json)
+    // App envia via WebSocket:
+    /*
+        {
+            "type": "location",
+            "lat": -8.8383,
+            "lng": 13.2344
+        }
+    */
+    if (json.find("\"type\":\"location\"") != std::string::npos)
+    {
+        // broadcast localização
+        std::string msg = ":" + user->getNickname() + " PRIVMSG " + target + " :" + json;
+
+        Channel* channel = channelManager.getChannel(target);
+        if (channel)
+            messageRouter.sendToChannel(channel, msg, user);
+    }
 }

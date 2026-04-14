@@ -6,7 +6,7 @@
 /*   By: ateca <marvin@42.fr>                       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/11 17:25:00 by ateca             #+#    #+#             */
-/*   Updated: 2026/04/11 17:25:00 by ateca            ###   ########.fr       */
+/*   Updated: 2026/04/14 23:35:18 by ateca            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -37,6 +37,8 @@ private:
     void handleJoin(User* user, const IRCMessage &msg);
     void handlePrivmsg(User* user, const IRCMessage &msg);
     void handleQuit(User* user, const IRCMessage &msg);
+    void handleStructuredMessage(User* user, const std::string &target, const std::string &json);
+
     
     void sendWelcome(User* user);
 };
