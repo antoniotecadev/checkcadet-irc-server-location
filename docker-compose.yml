@@ -16,6 +16,19 @@ services:
     networks:
       - irc-network
 
+  # Gateway WebSocket para comunicação em tempo real (Acesse em ws://localhost:3000)
+  websocket-gateway:
+    build:
+      context: ./gateway
+    container_name: ws_gateway
+    ports:
+      - "3000:3000"
+    depends_on:
+      - irc-server
+    restart: unless-stopped
+    networks:
+      - irc-network
+
   # Dashboard de Logs (Acesse em http://localhost:8080)
   log-viewer:
     image: amir20/dozzle:latest

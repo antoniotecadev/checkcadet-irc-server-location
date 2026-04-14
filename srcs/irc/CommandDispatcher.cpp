@@ -6,7 +6,7 @@
 /*   By: ateca <marvin@42.fr>                       +#+  +:+       +#+        */
 /*                                                +#+#+#+#+#+   +#+           */
 /*   Created: 2026/04/11 17:30:00 by ateca             #+#    #+#             */
-/*   Updated: 2026/04/11 17:30:00 by ateca            ###   ########.fr       */
+/*   Updated: 2026/04/14 19:34:30 by ateca            ###   ########.fr       */
 /*                                                                            */
 /* ************************************************************************** */
 
@@ -92,11 +92,13 @@ void CommandDispatcher::handleJoin(User* user, const IRCMessage &msg)
     // Envia Tópico e Lista de Nomes (padrão RFC)
     messageRouter.sendToUser(user, ":server 332 " + user->getNickname() + " " + channelName + " :" + channel->getTopic());
     
+    // Envia lista de usuários no canal (NAMES)
     std::string names = ":server 353 " + user->getNickname() + " = " + channelName + " :";
     for (User* m : channel->getMembers())
         names += m->getNickname() + " ";
     messageRouter.sendToUser(user, names);
     
+    // Finaliza a lista de nomes com o comando RFC 366 (End of NAMES)
     messageRouter.sendToUser(user, ":server 366 " + user->getNickname() + " " + channelName + " :End of NAMES list");
 }
 
